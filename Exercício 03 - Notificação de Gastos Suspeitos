@@ -7,29 +7,29 @@ def activityNotifications(expenditure, d):
         n = len(janela)
         meio = n // 2
         if n % 2 == 0:
-            return (janela[meio - 1] + janela[meio]) / 2
+            return (janela[meio - 1] + janela[meio]) / 2 # Se par: média dos dois centrais
         else:
-            return janela[meio]
+            return janela[meio] # Se ímpar: retorna o elemento central
 
     notificacoes = 0
-    janela = sorted(expenditure[:d])  # primeiros d elementos
+    janela = sorted(expenditure[:d]) 
 
     for i in range(d, len(expenditure)):
         mediana = get_mediana(janela)
         if expenditure[i] >= 2 * mediana:
             notificacoes += 1
 
-        # remove o gasto mais antigo
+        # Remove o gasto mais antigo
         antigo = expenditure[i - d]
         index = bisect_left(janela, antigo)
         del janela[index]
 
-        # insere o novo gasto mantendo a ordem
+        # Insere o novo gasto mantendo a ordem
         insort(janela, expenditure[i])
 
     return notificacoes
 
-
+# Código Base
 def gerar_dados(n, max_val=200):
     return [random.randint(0, max_val) for _ in range(n)]
 
