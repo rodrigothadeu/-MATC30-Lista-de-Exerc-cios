@@ -2,17 +2,24 @@ import random
 
 def insertionSort(arr):
     deslocamentos = 0
+
+# Percorre a lista
     for i in range(1, len(arr)):
         atual = arr[i]
         j = i - 1
-        
+
+# Empura para direita quando tem elementor maior que o atual
         while j >= 0 and arr[j] > atual:
             arr[j + 1] = arr[j]
             deslocamentos += 1
             j -= 1
+
+        # Quando encontrar a posição correta, insere o elemento atual
         arr[j + 1] = atual
+
     return deslocamentos
 
+# Código Base
 def generate_random_array(size, min_val=1, max_val=100):
     return [random.randint(min_val, max_val) for _ in range(size)]
 
