@@ -1,0 +1,83 @@
+import random
+
+def resolver_labirinto(n, m, k, maze, tunnels):
+
+    # Mapeia túneis bidirecionais
+    tunel_map = {}
+    for i1, j1, i2, j2 in tunnels:
+        tunel_map[(i1, j1)] = (i2, j2)
+        tunel_map[(i2, j2)] = (i1, j1)
+
+    # Percorremos o labirinto para encontar e salvar a posição inicial
+    for i in range(n):
+        for j in range(m):
+            if maze[i][j] == 'A':
+                start = (i, j)
+
+    # Direções possíveis 
+    direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    # Exploração de caminhos + fuga ou não (mina ou escapa)
+    def dfs(x, y, visitados):
+        if maze[x][y] == '*':
+            return 0.0
+        if maze[x][y] == '%':
+            return 1.0
+
+        visitados.add((x, y))
+
+        # Lista para armazenar possibilidades de caminhos
+        possibilidades = []
+
+        # Cálcula as coordenadas das novas células com base nas movimentações possíveis
+        for dx, dy in direcoes:
+            nx, ny = x + dx, y + dy
+            # Verifica se é obstáculo
+            if 0 <= nx < n and 0 <= ny < m and maze[nx][ny] != '#':
+                # "Teletransporte" pelo túnel
+                destino = (nx, ny)
+                if destino in tunel_map:
+                    destino = tunel_map[destino]
+                if destino not in visitados:
+                    possibilidades.append(dfs(destino[0], destino[1], set(visitados)))
+
+        if not possibilidades:
+            return 0.0
+        return sum(possibilidades) / len(possibilidades)
+
+    return dfs(start[0], start[1], set())
+
+# Código Base
+def gerar_labirinto(n, m):
+    elementos = ['O'] * 5 + ['#', '*', '%']
+    labirinto = [''.join(random.choice(elementos) for _ in range(m)) for _ in range(n)]
+    i, j = random.randint(0, n-1), random.randint(0, m-1)
+    linha = list(labirinto[i])
+    linha[j] = 'A'
+    labirinto[i] = ''.join(linha)
+    return labirinto
+
+def gerar_tuneis(k, n, m):
+    tuneis = set()
+    while len(tuneis) < k:
+        i1, j1 = random.randint(0, n-1), random.randint(0, m-1)
+        i2, j2 = random.randint(0, n-1), random.randint(0, m-1)
+        if (i1 != i2 or j1 != j2):
+            tuneis.add((i1, j1, i2, j2))
+    return list(tuneis)
+
+def main():
+    print("Digite o número de linhas, colunas e túneis (separados por espaço):")
+    n, m, k = map(int, input().split())
+
+    print("\n Digite o labirinto, linha por linha (com os caracteres O, #, *, %, A):")
+    maze = [input().strip() for _ in range(n)]
+
+    print("\n Digite as coordenadas dos túneis (linha1 coluna1 linha2 coluna2):")
+    tunnels = [tuple(map(int, input().split())) for _ in range(k)]
+
+    resultado = resolver_labirinto(n, m, k, maze, tunnels)
+    print(f"\n Probabilidade de fuga: {resultado:.6f}")
+
+if __name__ == '__main__':
+    main()
