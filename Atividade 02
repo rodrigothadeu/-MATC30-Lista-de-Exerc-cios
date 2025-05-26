@@ -1,0 +1,26 @@
+import random
+
+def insertionSort(arr):
+    deslocamentos = 0
+    for i in range(1, len(arr)):
+        atual = arr[i]
+        j = i - 1
+        
+        while j >= 0 and arr[j] > atual:
+            arr[j + 1] = arr[j]
+            deslocamentos += 1
+            j -= 1
+        arr[j + 1] = atual
+    return deslocamentos
+
+def generate_random_array(size, min_val=1, max_val=100):
+    return [random.randint(min_val, max_val) for _ in range(size)]
+
+def main():
+    arr = generate_random_array(10)
+    print("Array de entrada:", arr)
+    result = insertionSort(arr)
+    print("Deslocamentos realizados:", result)
+
+if __name__ == '__main__':
+    main()
