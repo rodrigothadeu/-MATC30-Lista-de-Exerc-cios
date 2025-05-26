@@ -1,0 +1,139 @@
+import random
+
+def countRecognizedStrings(R, L):
+    from collections import defaultdict
+
+    MOD = 10**9 + 7
+
+    # Parser recursivo que converte R em NFA (Thompson's Construction)
+    state_id = [0]
+    def new_state():
+        s = state_id[0]
+        state_id[0] += 1
+        return s
+
+    def parse_expr(i):
+        def parse_atom(i):
+            if R[i] == '(':
+                result, i = parse_expr(i + 1)
+                assert R[i] == ')'
+                return result, i + 1
+            elif R[i] in "ab":
+                s1, s2 = new_state(), new_state()
+                transitions = defaultdict(list)
+                transitions[s1].append((R[i], s2))
+                return (s1, s2, transitions), i + 1
+            else:
+                raise ValueError(f"Unexpected character: {R[i]}")
+
+        def parse_star(i):
+            base, i = parse_atom(i)
+            if i < len(R) and R[i] == '*':
+                s1, s2 = new_state(), new_state()
+                start, end, trans = base
+                trans[s1].append(('ε', start))
+                trans[end].append(('ε', s2))
+                trans[end].append(('ε', start))
+                trans[s1].append(('ε', s2))
+                return (s1, s2, trans), i + 1
+            return base, i
+
+        def parse_concat(i):
+            left, i = parse_star(i)
+            while i < len(R) and R[i] not in ')|':
+                right, i = parse_star(i)
+                l_start, l_end, l_trans = left
+                r_start, r_end, r_trans = right
+                l_trans[l_end].append(('ε', r_start))
+                for k, v in r_trans.items():
+                    l_trans[k].extend(v)
+                for k, v in l_trans.items():
+                    l_trans[k] = v
+                left = (l_start, r_end, l_trans)
+            return left, i
+
+        def parse_union(i):
+            left, i = parse_concat(i)
+            if i < len(R) and R[i] == '|':
+                right, i = parse_expr(i + 1)
+                l_start, l_end, l_trans = left
+                r_start, r_end, r_trans = right
+                s1, s2 = new_state(), new_state()
+                trans = defaultdict(list)
+                trans[s1].extend([('ε', l_start), ('ε', r_start)])
+                l_trans[l_end].append(('ε', s2))
+                r_trans[r_end].append(('ε', s2))
+                for k in set(l_trans) | set(r_trans):
+                    trans[k].extend(l_trans.get(k, []) + r_trans.get(k, []))
+                return (s1, s2, trans), i
+            return left, i
+
+        return parse_union(i)
+
+    (start, end, trans), _ = parse_expr(0)
+
+    # Cálculo de epsilon-closure
+    def epsilon_closure(state, trans):
+        stack = [state]
+        visited = set(stack)
+        while stack:
+            curr = stack.pop()
+            for symbol, nxt in trans.get(curr, []):
+                if symbol == 'ε' and nxt not in visited:
+                    visited.add(nxt)
+                    stack.append(nxt)
+        return visited
+
+    all_states = set()
+    for k in trans:
+        all_states.add(k)
+        for _, v in trans[k]:
+            all_states.add(v)
+
+    closures = {s: epsilon_closure(s, trans) for s in all_states}
+
+    # DP para contar strings reconhecidas de tamanho L
+    dp = [defaultdict(int) for _ in range(L + 1)]
+    for s in closures[start]:
+        dp[0][s] = 1
+
+    for i in range(L):
+        for s in dp[i]:
+            count = dp[i][s]
+            for u in closures[s]:
+                for symbol, v in trans.get(u, []):
+                    if symbol in 'ab':
+                        for t in closures[v]:
+                            dp[i + 1][t] = (dp[i + 1][t] + count) % MOD
+
+    return dp[L][end]
+
+
+def gerar_expressao():
+    # Simples gerador de expressões balanceadas
+    bases = ["a", "b"]
+    exp = random.choice(bases)
+    for _ in range(random.randint(1, 3)):
+        op = random.choice(["|", "", "*"])
+        if op == "":
+            exp = f"({exp}{random.choice(bases)})"
+        elif op == "|":
+            exp = f"({exp}|{random.choice(bases)})"
+        elif op == "*":
+            exp = f"({exp}*)"
+    return exp
+
+def main():
+    T = 3
+    casos = []
+    for _ in range(T):
+        R = gerar_expressao()
+        L = random.randint(1, 6)
+        casos.append((R, L))
+    for R, L in casos:
+        print(f"Expressão: {R}, Tamanho: {L}")
+        resultado = countRecognizedStrings(R, L)
+        print("Reconhecidas:", resultado)
+
+if __name__ == '__main__':
+    main()
